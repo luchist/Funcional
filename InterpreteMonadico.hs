@@ -1,64 +1,125 @@
--- Interpreter Monadico
+import Control.Monad
+-- Interpreter Monadico --
+
 
 {--
+
+La clase Monad:
+
 class Monad m where 
-	return :: a -> m a
-	(>>=) :: m a -> (a -> m b) -> m b
+  return :: a -> m a
+  (>>=) :: m a -> (a -> m b) -> m b
+
 -}
-type Variable = String
-type Store = Variable -> Int
+
+-- El interprete
+
+type Variable         = String
+type Store            = (Variable -> Int)
 
 newtype Interpreter v = IntImp {step :: Store -> (Store, v)} 
+--                             |
+-- Record notation <-----------|
 
--- record notation
+-- Es lo mismo que decir:
 
--- Es lo mismo que hacer:
--- newtype Interpreter v = IntImp (Store -> (Store, v))
-
+-- data Interpreter v = IntImp (Store -> (Store, v))
+--
 -- step :: Interpreter v -> (Store -> (Store, v))
 -- step (IntImp f) = f
--- step "abre" y le saca el constructor
+-- step "abre" el store (le saca el constructor IntImp), osea me quedo con la funcion Store -> (Store, v)
 
 
--- No me sale el bind!!  D:
+-- Instancias de Functor y Functor Aplicativo, para GHCi
+
+instance Functor Interpreter where
+    fmap = liftM
+
+instance Applicative Interpreter where 
+    pure = return
+    (<*>) = ap
+
+
+-- Instancia de Monad
+-- Tendria que tener los tipos:
+-- return :: a -> Interpreter a
+-- (>>=)  :: Interpreter a -> (a -> Interpreter b) -> Interpreter b
 
 instance Monad Interpreter where
-   return x = IntImp(\s -> (s,x)) 
-   m >>= k = k (snd           ((step m)         store))
-{-                     -- Store -> (Store,v)   store::Store 
-              snd                      (Store,v)
-                             v
- lo que hago es              k v    
--}
+   return x = IntImp( \s -> (s,x) )
+   -- m >>= k  = IntImp( \s -> (step (k (snd ((step m) s)))) s)
+
+   -- h , g :: Store -> (Store, v)
+   -- f     :: (a -> Interpreter b)
+   (IntImp h) >>= f = IntImp $ \s -> let (newStore, a) = h s
+                                         (IntImp g) = f a
+                                      in  g newStore
+
+
 
 read' :: Variable -> Interpreter Int
 read' v = IntImp(\s -> (s, s v))
 
+
 write' :: Variable -> Int -> Interpreter()
-write' v n = IntImp(\s -> (extender s v n,())) -- \v -> \n -> (s, s v+1) 
--- hay que "guardar" la relacion v -> n en el store
+write' var int = IntImp(\store -> (extender store var int,())) -- \var -> \int -> (store, store var+1) 
+-- hay que "guardar" la relacion var -> int en el store
 
-extender s v n = \v' -> if v==v' then n else s v'
+extender s var int = \var' -> if (var == var') 
+                              then int 
+                              else s var'
 
---memVacia ::
-blanco :: Interpreter()
-blanco = IntImp(\str -> (str,()))
 
-store :: Store
-store = \" " -> 0
+enBlanco :: Interpreter()
+enBlanco = IntImp(\str -> (str,()))
 
---(write' "a" 5 blanco)
--- read' "a" blanco         --> 5
+emptyStore :: Store
+emptyStore = \" " -> 0
+
+execStore :: Interpreter a -> Store -> Store
+execStore i s = fst ((step i) s)
+
+runStore :: Interpreter a -> Store -> a
+runStore i s = snd ((step i) s)
 
 -- Uso
 incX = do v <- read' "x";
                write' "x" (v+1)
 
+save = do
+          write' "a" 1
+          write' "b" 2
+          write' "c" 3
+          a <- read' "a"
+          b <- read' "b"
+          c <- read' "c"
+          return [a,b,c]
+
+stuff = do
+          write' "x" 10
+          write' "y" 100
+          x <- read' "x"
+          y <- read' "y"
+          write' "z" (x + y)
+          z <- read' "z"
+          return z
+
+stuff2 = do
+          write' "x" 123
+          x <- read' "x"
+          return x
+
+
 {-
+   Notacion Do         <==>          Bind
+
 do v <- read' "x";              read' "x" >>= \v ->
    write' "x" (v+1);            write "x" (v+1)
+
 -}
 
+-- write' "x" 4 >>= \_ -> read' "x" 
+{-
 -----------------------------------------------------------------------------
 -- http://aprendehaskell.es/content/MasMonadas.html#creando-monadas
 -- aca esta la monada de Fidel adaptada
@@ -204,4 +265,4 @@ read v ((v', x) : m) =
     if v == v'
        then x
        else read v m
-
+-}
