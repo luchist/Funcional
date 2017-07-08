@@ -3,7 +3,7 @@
 # Funcional
  Cosos de funcional.
  
- Pull request friendly.
+ Un repositorio en el que cualquiera puede contribuir.
 
 
 ## Links Utiles
@@ -48,5 +48,6 @@ Varias lecturas, con diferentes formas de explicar que son o para que sirven las
 * [The monad tutorial fallacy](https://byorgey.wordpress.com/2009/01/12/abstraction-intuition-and-the-monad-tutorial-fallacy/) - por Brent Yorgey. Explicacion de porqué las analogias para explicar monadas a veces no funcionan
   * [The "What are monads?" fallacy](https://two-wrongs.com/the-what-are-monads-fallacy) - por ~kqr. Explicado un poco mas resumido
 * [You could have invented monads](http://blog.sigfpe.com/2006/08/you-could-have-invented-monads-and.html) -por  Dan Piponi. Tutorial completo con ejercicios
+* [The Monad Fear](https://e.xtendo.org/monad) - del LINE Haskell Boot Camp
 
 ~ Find your own Burrito ~
